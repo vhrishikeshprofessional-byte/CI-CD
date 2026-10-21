@@ -5,3 +5,4 @@ Standard: c++17
 UseTab: Never
 SortIncludes: false
 LineEnding: LF
+AllowShortFunctionsOnASingleLine: None

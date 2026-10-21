@@ -10,8 +10,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 WORKDIR /app
 
-# Upgrade system packages to pull latest security patches and create non-root user
+# Upgrade system packages, remove build-only tools (npm/yarn), and create non-root user
 RUN apk update && apk upgrade --no-cache && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn* /usr/local/bin/yarn* /usr/local/bin/corepack && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Copy dependencies and application source with appropriate ownership

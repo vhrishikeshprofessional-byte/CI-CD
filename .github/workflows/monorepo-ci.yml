@@ -42,7 +42,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t java-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: java-hello:${{ github.sha }}
           format: "table"
@@ -88,7 +88,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t react-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: react-hello:${{ github.sha }}
           format: "table"
@@ -132,7 +132,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t node-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: node-hello:${{ github.sha }}
           format: "table"
@@ -176,7 +176,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t cpp-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: cpp-hello:${{ github.sha }}
           format: "table"
@@ -219,7 +219,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t dotnet-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: dotnet-hello:${{ github.sha }}
           format: "table"
@@ -266,7 +266,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t fastapi-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: fastapi-hello:${{ github.sha }}
           format: "table"
@@ -303,7 +303,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t go-hello:${{ github.sha }} .
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: go-hello:${{ github.sha }}
           format: "table"

@@ -68,7 +68,7 @@ jobs:
         run: docker build -t go-hello:${{ github.sha }} .
 
       - name: Trivy Docker Image Scan
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: go-hello:${{ github.sha }}
           format: "table"

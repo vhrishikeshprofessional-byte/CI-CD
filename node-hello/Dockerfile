@@ -10,8 +10,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 WORKDIR /app
 
-# Create non-root system user and group
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Upgrade system packages to pull latest security patches and create non-root user
+RUN apk update && apk upgrade --no-cache && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Copy dependencies and application source with appropriate ownership
 COPY --from=dependencies --chown=appuser:appgroup /app/node_modules ./node_modules

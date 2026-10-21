@@ -1,0 +1,11 @@
+format: table
+exit-code: 1
+severity:
+  - CRITICAL
+  - HIGH
+ignore-unfixed: true
+scan:
+  scanners:
+    - vuln
+    - misconfig
+    - secret

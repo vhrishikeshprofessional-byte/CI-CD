@@ -1,0 +1,18 @@
+# Gitleaks Configuration for DevSecOps Monorepo
+title = "DevSecOps Multi-Framework Gitleaks Configuration"
+
+[extend]
+# Extend default gitleaks rules
+
+[allowlist]
+description = "Global allowlist for build artifacts, mock keys, and tests"
+paths = [
+  '''(?i)node_modules''',
+  '''(?i)\.git''',
+  '''(?i)target/''',
+  '''(?i)dist/''',
+  '''(?i)build/''',
+  '''(?i)coverage/''',
+  '''(?i)TestResults/''',
+  '''(?i)\.venv/'''
+]

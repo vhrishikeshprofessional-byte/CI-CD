@@ -1,0 +1,85 @@
+name: React DevSecOps CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-security-test:
+    name: Build, Quality & Security Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "react-hello/package-lock.json"
+
+      - name: Install Dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: ESLint Code Quality
+        run: npm run lint
+
+      - name: Prettier Formatting Check
+        run: npm run format:check
+
+      - name: Unit Tests & Coverage (Vitest)
+        run: npm run test:coverage
+
+      - name: Build React Application
+        run: npm run build
+
+      - name: Dependency Vulnerability Audit
+        continue-on-error: true # Report warnings without blocking on low-risk dev audit quirks
+        run: npm audit --audit-level=high
+
+      - name: SonarQube Scan
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'react-hello' }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=src/**/*.test.jsx,src/**/*.test.js
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker Image
+        run: docker build -t react-hello:${{ github.sha }} .
+
+      - name: Trivy Docker Image Scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: react-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"

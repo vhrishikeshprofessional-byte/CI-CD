@@ -1,0 +1,25 @@
+{
+  "name": "node-hello",
+  "version": "1.0.0",
+  "description": "DevSecOps Node.js Express API Reference Application",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "node --test",
+    "test:coverage": "c8 --reporter=lcov --reporter=text node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "c8": "^10.1.3",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "supertest": "^7.0.0"
+  }
+}

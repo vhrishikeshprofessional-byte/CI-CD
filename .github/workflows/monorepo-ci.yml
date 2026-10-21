@@ -1,0 +1,313 @@
+name: Monorepo DevSecOps CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ==========================================
+  # Java 21 DevSecOps Pipeline
+  # ==========================================
+  java-pipeline:
+    name: Java 21 DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: java-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+          cache-dependency-path: "java-hello/pom.xml"
+      - name: Compile, Test, JaCoCo & Static Analysis
+        run: mvn -B clean verify
+      - name: OWASP Dependency Check
+        continue-on-error: true
+        run: mvn -B org.owasp:dependency-check-maven:check -DfailOnError=false
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t java-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: java-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  # ==========================================
+  # React + Vite DevSecOps Pipeline
+  # ==========================================
+  react-pipeline:
+    name: React DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier Formatting Check
+        run: npm run format:check
+      - name: Vitest Unit Tests & Coverage
+        run: npm run test:coverage
+      - name: Build React Application
+        run: npm run build
+      - name: npm Audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t react-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: react-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  # ==========================================
+  # Node.js + Express DevSecOps Pipeline
+  # ==========================================
+  node-pipeline:
+    name: Node.js DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: node-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier Formatting Check
+        run: npm run format:check
+      - name: Unit Tests & Coverage
+        run: npm run test:coverage
+      - name: npm Audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t node-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: node-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  # ==========================================
+  # C++17 + CMake DevSecOps Pipeline
+  # ==========================================
+  cpp-pipeline:
+    name: C++17 DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cpp-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Compilers and Linters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake g++ clang-format clang-tidy cppcheck
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: Build Binary
+        run: cmake --build build --parallel
+      - name: Unit Tests (CTest)
+        run: ctest --test-dir build --output-on-failure
+      - name: Formatting Check
+        run: clang-format --dry-run --Werror src/*.cpp src/*.h tests/*.cpp
+      - name: Cppcheck Static Analysis
+        run: cppcheck --enable=warning,style,performance,portability --error-exitcode=1 src tests
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t cpp-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: cpp-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  # ==========================================
+  # .NET 8 Web API DevSecOps Pipeline
+  # ==========================================
+  dotnet-pipeline:
+    name: .NET 8 DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dotnet-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore Packages
+        run: dotnet restore DotnetHello.sln
+      - name: dotnet-format Style Check
+        run: dotnet format --verify-no-changes
+      - name: Build with Strict Warnings
+        run: dotnet build DotnetHello.sln -c Release --no-restore
+      - name: Run Tests & Collect Coverage
+        run: dotnet test DotnetHello.sln -c Release --no-build --collect:"XPlat Code Coverage"
+      - name: Dependency Vulnerability Check
+        continue-on-error: true
+        run: dotnet list DotnetHello.sln package --vulnerable --include-transitive
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t dotnet-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: dotnet-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  # ==========================================
+  # Python FastAPI DevSecOps Pipeline
+  # ==========================================
+  fastapi-pipeline:
+    name: FastAPI DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fastapi-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "fastapi-hello/requirements-dev.txt"
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Ruff Lint Check
+        run: ruff check app tests
+      - name: Ruff Format Check
+        run: ruff format --check app tests
+      - name: Pytest with Coverage
+        run: pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term
+      - name: Dependency Vulnerability Audit
+        continue-on-error: true
+        run: pip-audit -r requirements.txt
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t fastapi-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: fastapi-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"
+
+  # ==========================================
+  # Go 1.23 REST API DevSecOps Pipeline
+  # ==========================================
+  go-pipeline:
+    name: Go DevSecOps
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: go-hello
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: "go-hello/go.mod"
+      - name: Go Vet
+        run: go vet ./...
+      - name: Run Tests with Race Detector & Coverage
+        run: go test -v -race -coverprofile=coverage.out ./...
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t go-hello:${{ github.sha }} .
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: go-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"

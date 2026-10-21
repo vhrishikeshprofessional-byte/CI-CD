@@ -1,0 +1,10 @@
+line-length = 88
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = ["S101"] # Allow assert statements in tests
+
+[format]
+quote-style = "double"
+indent-style = "space"

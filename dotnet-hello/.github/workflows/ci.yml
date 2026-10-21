@@ -1,0 +1,80 @@
+name: .NET DevSecOps CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-security-test:
+    name: Build, Quality & Security Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore NuGet Packages
+        run: dotnet restore DotnetHello.sln
+
+      - name: Code Formatting Check (dotnet-format)
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+
+      - name: Build Application with Strict Warnings
+        run: dotnet build DotnetHello.sln -c Release --no-restore
+
+      - name: Run Unit Tests & Code Coverage
+        run: >
+          dotnet test DotnetHello.sln
+          -c Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Dependency Vulnerability Check (SCA)
+        continue-on-error: true # Report transitive vulnerabilities without aborting on false-positives
+        run: dotnet list DotnetHello.sln package --vulnerable --include-transitive
+
+      - name: SonarQube Scan
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'dotnet-hello' }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.sources=src/DotnetHello
+            -Dsonar.tests=tests/DotnetHello.Tests
+            -Dsonar.cs.opencover.reportsPaths=**/TestResults/**/coverage.opencover.xml
+
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker Image
+        run: docker build -t dotnet-hello:${{ github.sha }} .
+
+      - name: Trivy Docker Image Scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: dotnet-hello:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "HIGH,CRITICAL"

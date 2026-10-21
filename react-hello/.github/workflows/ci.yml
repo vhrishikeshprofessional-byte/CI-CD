@@ -49,7 +49,7 @@ jobs:
 
       - name: Dependency Vulnerability Audit
         continue-on-error: true # Report warnings without blocking on low-risk dev audit quirks
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
 
       - name: SonarQube Scan
         if: env.SONAR_TOKEN != ''

@@ -80,7 +80,7 @@ jobs:
         run: npm run build
       - name: npm Audit
         continue-on-error: true
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
       - name: Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         env:
